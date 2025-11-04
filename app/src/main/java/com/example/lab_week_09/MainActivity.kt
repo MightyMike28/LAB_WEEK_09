@@ -1,6 +1,7 @@
 package com.example.lab_week_09
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -20,9 +21,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import androidx.navigation.NavType
 import com.example.lab_week_09.ui.theme.*
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 
 data class Student(var name: String)
 
@@ -45,7 +46,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Home(
-    navigateFromHomeToResult: (String) -> Unit
+    navigateToResult: (List<Student>) -> Unit
 ) {
     val listData = remember {
         mutableStateListOf(
@@ -62,18 +63,14 @@ fun Home(
         inputValue = inputField,
         onInputValueChange = { inputField = it },
         onButtonClick = {
+            // ✅ Cegah input kosong
             if (inputField.isNotBlank()) {
                 listData.add(Student(inputField))
                 inputField = ""
             }
         },
-        // ✅ kirim list dalam format "[Student(name=...), Student(name=...)]"
         navigateFromHomeToResult = {
-            val formattedList = listData.joinToString(
-                prefix = "[",
-                postfix = "]"
-            ) { "Student(name=${it.name})" }
-            navigateFromHomeToResult(formattedList)
+            navigateToResult(listData)
         }
     )
 }
@@ -133,28 +130,38 @@ fun App(navController: NavHostController) {
         startDestination = "home"
     ) {
         composable("home") {
-            Home { navController.navigate("resultContent/${it}") }
+            Home { list ->
+                // ✅ Simpan data di SavedStateHandle
+                navController.currentBackStackEntry?.savedStateHandle?.set("students", list)
+                navController.navigate("result")
+            }
         }
 
-        composable(
-            route = "resultContent/{listData}",
-            arguments = listOf(navArgument("listData") { type = NavType.StringType })
-        ) {
-            val data = it.arguments?.getString("listData") ?: ""
-            ResultContent(data)
+        composable("result") {
+            // ✅ Ambil data dari SavedStateHandle
+            val students =
+                navController.previousBackStackEntry?.savedStateHandle?.get<List<Student>>("students")
+                    ?: emptyList()
+            ResultContent(students)
         }
     }
 }
 
 @Composable
-fun ResultContent(listData: String) {
+fun ResultContent(students: List<Student>) {
     Column(
         modifier = Modifier
             .padding(vertical = 4.dp)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        OnBackgroundItemText(text = listData)
+        OnBackgroundTitleText(text = "List of Students:")
+
+        LazyColumn {
+            items(students) { student ->
+                OnBackgroundItemText(text = student.name)
+            }
+        }
     }
 }
 
