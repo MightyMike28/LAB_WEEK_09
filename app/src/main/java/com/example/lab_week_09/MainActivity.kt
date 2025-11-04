@@ -16,6 +16,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 import com.example.lab_week_09.ui.theme.*
 
 data class Student(var name: String)
@@ -29,7 +35,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Home()
+                    val navController = rememberNavController()
+                    App(navController)
                 }
             }
         }
@@ -37,7 +44,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Home() {
+fun Home(
+    navigateFromHomeToResult: (String) -> Unit
+) {
     val listData = remember {
         mutableStateListOf(
             Student("Tanu"),
@@ -57,6 +66,14 @@ fun Home() {
                 listData.add(Student(inputField))
                 inputField = ""
             }
+        },
+        // ✅ kirim list dalam format "[Student(name=...), Student(name=...)]"
+        navigateFromHomeToResult = {
+            val formattedList = listData.joinToString(
+                prefix = "[",
+                postfix = "]"
+            ) { "Student(name=${it.name})" }
+            navigateFromHomeToResult(formattedList)
         }
     )
 }
@@ -66,50 +83,41 @@ fun HomeContent(
     listData: SnapshotStateList<Student>,
     inputValue: String,
     onInputValueChange: (String) -> Unit,
-    onButtonClick: () -> Unit
+    onButtonClick: () -> Unit,
+    navigateFromHomeToResult: () -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    LazyColumn {
         item {
             Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Judul input
-                OnBackgroundTitleText(
-                    text = stringResource(id = R.string.enter_item)
-                )
+                OnBackgroundTitleText(text = stringResource(id = R.string.enter_item))
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Input field
                 TextField(
                     value = inputValue,
-                    onValueChange = onInputValueChange,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text
-                    )
+                    onValueChange = { onInputValueChange(it) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Tombol Submit
-                PrimaryTextButton(
-                    text = stringResource(id = R.string.button_click),
-                    onClick = onButtonClick
-                )
+                Row {
+                    PrimaryTextButton(text = stringResource(id = R.string.button_click)) {
+                        onButtonClick()
+                    }
+                    PrimaryTextButton(text = stringResource(id = R.string.button_navigate)) {
+                        navigateFromHomeToResult()
+                    }
+                }
             }
         }
 
-        // Menampilkan daftar item
         items(listData) { item ->
             Column(
                 modifier = Modifier
                     .padding(vertical = 4.dp)
-                    .fillMaxWidth(),
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OnBackgroundItemText(text = item.name)
@@ -118,10 +126,42 @@ fun HomeContent(
     }
 }
 
+@Composable
+fun App(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+        composable("home") {
+            Home { navController.navigate("resultContent/${it}") }
+        }
+
+        composable(
+            route = "resultContent/{listData}",
+            arguments = listOf(navArgument("listData") { type = NavType.StringType })
+        ) {
+            val data = it.arguments?.getString("listData") ?: ""
+            ResultContent(data)
+        }
+    }
+}
+
+@Composable
+fun ResultContent(listData: String) {
+    Column(
+        modifier = Modifier
+            .padding(vertical = 4.dp)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        OnBackgroundItemText(text = listData)
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewHome() {
     LAB_WEEK_09Theme {
-        Home()
+        Home {}
     }
 }
