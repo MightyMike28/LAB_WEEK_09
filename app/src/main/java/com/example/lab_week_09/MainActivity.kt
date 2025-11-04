@@ -16,9 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
+import com.example.lab_week_09.ui.theme.*
 
-// Data class untuk menyimpan nama
 data class Student(var name: String)
 
 class MainActivity : ComponentActivity() {
@@ -39,7 +38,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Home() {
-    // Daftar mahasiswa (state yang bisa berubah)
     val listData = remember {
         mutableStateListOf(
             Student("Tanu"),
@@ -48,7 +46,6 @@ fun Home() {
         )
     }
 
-    // Input field sementara
     var inputField by remember { mutableStateOf("") }
 
     HomeContent(
@@ -72,48 +69,54 @@ fun HomeContent(
     onButtonClick: () -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
             Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = stringResource(id = R.string.enter_item))
-
-                TextField(
-                    value = inputValue,
-                    onValueChange = onInputValueChange,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                // Judul input
+                OnBackgroundTitleText(
+                    text = stringResource(id = R.string.enter_item)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Button(onClick = onButtonClick) {
-                    Text(text = stringResource(id = R.string.button_click))
-                }
+                // Input field
+                TextField(
+                    value = inputValue,
+                    onValueChange = onInputValueChange,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text
+                    )
+                )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Tombol Submit
+                PrimaryTextButton(
+                    text = stringResource(id = R.string.button_click),
+                    onClick = onButtonClick
+                )
             }
         }
 
-        // 🟢 Bagian ini diperbaiki
-        items(listData) { student ->
+        // Menampilkan daftar item
+        items(listData) { item ->
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = 4.dp)
+                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = student.name)
+                OnBackgroundItemText(text = item.name)
             }
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
