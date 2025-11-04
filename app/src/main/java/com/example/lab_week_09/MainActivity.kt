@@ -6,16 +6,20 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
+
+// Data class untuk menyimpan nama
+data class Student(var name: String)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,8 +30,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val list = listOf("Tanu", "Tina", "Tono")
-                    Home(list)
+                    Home()
                 }
             }
         }
@@ -35,47 +38,87 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Home(items: List<String>) {
-    LazyColumn {
+fun Home() {
+    // Daftar mahasiswa (state yang bisa berubah)
+    val listData = remember {
+        mutableStateListOf(
+            Student("Tanu"),
+            Student("Tina"),
+            Student("Tono")
+        )
+    }
+
+    // Input field sementara
+    var inputField by remember { mutableStateOf("") }
+
+    HomeContent(
+        listData = listData,
+        inputValue = inputField,
+        onInputValueChange = { inputField = it },
+        onButtonClick = {
+            if (inputField.isNotBlank()) {
+                listData.add(Student(inputField))
+                inputField = ""
+            }
+        }
+    )
+}
+
+@Composable
+fun HomeContent(
+    listData: SnapshotStateList<Student>,
+    inputValue: String,
+    onInputValueChange: (String) -> Unit,
+    onButtonClick: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         item {
             Column(
                 modifier = Modifier
                     .padding(16.dp)
-                    .fillMaxSize(),
+                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(text = stringResource(id = R.string.enter_item))
 
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    value = inputValue,
+                    onValueChange = onInputValueChange,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                 )
 
-                Button(onClick = { }) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(onClick = onButtonClick) {
                     Text(text = stringResource(id = R.string.button_click))
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
-        items(items) { item ->
+        // 🟢 Bagian ini diperbaiki
+        items(listData) { student ->
             Column(
                 modifier = Modifier
-                    .padding(vertical = 4.dp)
-                    .fillMaxSize(),
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = item)
+                Text(text = student.name)
             }
         }
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewHome() {
-    val list = listOf("Tanu", "Tina", "Tono")
     LAB_WEEK_09Theme {
-        Home(list)
+        Home()
     }
 }
